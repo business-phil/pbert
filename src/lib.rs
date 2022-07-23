@@ -11,59 +11,80 @@ pub struct GameBoard {
 }
 impl GameBoard {
   pub fn new() -> GameBoard {
-    let grid: Grid = [false; 8];
-    let token = Token { location: 0 };
+    let grid: Grid = [[false; 4]; 4];
+    let token = Token { x: 0, y: 0 };
 
     GameBoard { grid, token }
   }
 
   pub fn is_victorious(&self) -> bool {
-    self.grid.iter().all(|&v| v)
+    self.grid.iter().all(|&row| row.iter().all(|&v| v))
+      || self.grid.iter().all(|&row| row.iter().all(|&v| !v))
   }
 
   pub fn flip_token_space(&mut self) {
-    self.grid[self.token.location] = !self.grid[self.token.location];
+    self.grid[self.token.x][self.token.y] = !self.grid[self.token.x][self.token.y];
+  }
+
+  pub fn move_token_up(&mut self) {
+    if self.token.x > 0 {
+      self.token.x -= 1;
+      self.flip_token_space();
+    }
+  }
+
+  pub fn move_token_down(&mut self) {
+    if self.token.x < self.grid.len() - 1 {
+      self.token.x += 1;
+      self.flip_token_space();
+    }
   }
 
   pub fn move_token_left(&mut self) {
-    if self.token.location > 0 {
-      self.token.location -= 1;
+    if self.token.y > 0 {
+      self.token.y -= 1;
       self.flip_token_space();
     }
   }
 
   pub fn move_token_right(&mut self) {
-    if self.token.location < self.grid.len() - 1 {
-      self.token.location += 1;
+    if self.token.y < self.grid.len() - 1 {
+      self.token.y += 1;
       self.flip_token_space();
     }
   }
 }
 
-// TODO
-pub type Grid = [bool; 8];
+pub type Grid = [[bool; 4]; 4];
 
 pub struct Token {
-  pub location: usize,
+  pub x: usize,
+  pub y: usize,
 }
 
 pub fn run(board: &mut GameBoard) -> Result<()> {
   println!("\r");
   board.flip_token_space();
-  println!("{:?}\r", board.grid);
+  for (i, _) in board.grid.iter().enumerate() {
+    println!("{:?}\r", board.grid[i])
+  }
   loop {
     if poll(Duration::from_millis(1_000))? {
       let event = read()?;
 
       if let Event::Key(key) = event {
-        // println!("{:?}\r", key);
         match key.code {
           KeyCode::Esc => break,
+          KeyCode::Up => board.move_token_up(),
+          KeyCode::Down => board.move_token_down(),
           KeyCode::Left => board.move_token_left(),
           KeyCode::Right => board.move_token_right(),
           _ => {}
         }
-        println!("{:?}\r", board.grid);
+        println!("Token location: ({}, {})\r", board.token.x, board.token.y);
+        for (i, _) in board.grid.iter().enumerate() {
+          println!("{:?}\r", board.grid[i])
+        }
         if board.is_victorious() {
           println!("VICTORY!\r");
           break;
