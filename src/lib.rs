@@ -1,3 +1,4 @@
+use std::fmt;
 use std::time::Duration;
 
 use crossterm::{
@@ -54,6 +55,17 @@ impl GameBoard {
     }
   }
 }
+impl fmt::Display for GameBoard {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    for row in self.grid {
+      for val in row {
+        write!(f, "{}", if val { "0" } else { "X" })?;
+      }
+      write!(f, "\n\r")?;
+    }
+    Ok(())
+  }
+}
 
 pub type Grid = [[bool; 4]; 4];
 
@@ -63,11 +75,8 @@ pub struct Token {
 }
 
 pub fn run(board: &mut GameBoard) -> Result<()> {
-  println!("\r");
   board.flip_token_space();
-  for (i, _) in board.grid.iter().enumerate() {
-    println!("{:?}\r", board.grid[i])
-  }
+  println!("\r{}", board);
   loop {
     if poll(Duration::from_millis(1_000))? {
       let event = read()?;
@@ -82,9 +91,7 @@ pub fn run(board: &mut GameBoard) -> Result<()> {
           _ => {}
         }
         println!("Token location: ({}, {})\r", board.token.x, board.token.y);
-        for (i, _) in board.grid.iter().enumerate() {
-          println!("{:?}\r", board.grid[i])
-        }
+        println!("{}", board);
         if board.is_victorious() {
           println!("VICTORY!\r");
           break;
